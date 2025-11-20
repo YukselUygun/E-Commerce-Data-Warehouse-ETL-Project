@@ -1,0 +1,6 @@
+database:
+  host: "localhost"
+  dbname: "ecommerce_dwh"
+  user: "postgres"
+  password: "YOUR_PASSWORD_HERE"
+  port: 5432
