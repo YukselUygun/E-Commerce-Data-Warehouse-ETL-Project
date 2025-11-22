@@ -3,7 +3,7 @@ import pandas as pd
 def transform(df):
     print("🔄 Transform aşaması başladı...")
 
-    # COPY ekledik: Pandas'a bunun yeni bir veri seti olduğunu söylüyoruz
+    # COPY ekleme
     df = df.copy()
 
     # 1) Kolon isimlerini düzenleme

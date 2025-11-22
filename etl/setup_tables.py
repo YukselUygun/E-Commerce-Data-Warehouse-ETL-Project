@@ -52,9 +52,8 @@ def create_tables():
         total_price NUMERIC
     );
     """
-    
     try:
-        with engine.connect() as conn:
+        with engine.begin() as conn:  
             conn.execute(text(sql_commands))
             conn.commit()
         logging.info("✅ Veritabanı SIFIRLANDI ve tablolar yeniden kuruldu.")

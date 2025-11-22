@@ -6,25 +6,20 @@ from transform import transform
 from load import load
 from quality_checks import run_checks
 
-# --- 1. LOG KLASÖRÜNÜ VE DOSYASINI AYARLA (Docker Uyumlu) ---
-# Şu anki dosyanın (main.py) olduğu yer
 current_dir = os.path.dirname(os.path.abspath(__file__))
 # Bir üst klasör (Proje ana dizini: /app)
 project_root = os.path.dirname(current_dir)
 # Logs klasörü yolu (/app/logs)
 log_dir = os.path.join(project_root, "logs")
 
-# Eğer logs klasörü yoksa OLUŞTUR (Hata almamak için kritik nokta)
 os.makedirs(log_dir, exist_ok=True)
 
-# Log dosyası tam yolu
 log_file_path = os.path.join(log_dir, "etl.log")
 
-# --- 2. LOGGER AYARLARI ---
+# 2. LOGGER AYARLARI 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# Varsa eski handlerları temizle (Çift yazdırmaması için)
 if logger.hasHandlers():
     logger.handlers.clear()
 

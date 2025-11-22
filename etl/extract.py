@@ -5,14 +5,13 @@ import logging
 def extract():
     logging.info("Starting EXTRACT stage...")
 
-    # --- YOLU DİNAMİK BULMA ---
-    # Şu anki dosyanın (extract.py) olduğu yer
+    #  YOLU DİNAMİK BULMA 
+
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    # Proje ana dizini (/app)
+
     project_root = os.path.dirname(current_dir)
-    # Hedef dosya: /app/data/raw/online_retail.csv
     csv_path = os.path.join(project_root, "data", "raw", "online_retail.csv")
-    # --------------------------
+
 
     if not os.path.exists(csv_path):
         logging.error(f"Data file not found: {csv_path}")

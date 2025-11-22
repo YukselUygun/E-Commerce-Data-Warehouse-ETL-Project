@@ -15,8 +15,6 @@ def get_engine():
     config = load_config()
     db_conf = config["database"]
     
-    # --- BURASI YENİ: Önce Environment Variable'a bak, yoksa config dosyasını al ---
-    # Docker'da çalışırken os.getenv değerleri gelecek.
     user = os.getenv("DB_USER", db_conf["user"])
     password = os.getenv("DB_PASSWORD", db_conf["password"])
     host = os.getenv("DB_HOST", db_conf["host"])

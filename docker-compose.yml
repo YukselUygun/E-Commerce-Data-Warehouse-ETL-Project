@@ -1,43 +1,95 @@
 version: '3.8'
 
 services:
-  # 1. Veritabanı Servisi
+  # 1. VERİ AMBARI 
   postgres:
     image: postgres:13
-    container_name: ecommerce_db_container
+    container_name: ecommerce_dwh_db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mysecretpassword
       POSTGRES_DB: ecommerce_dwh
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
-      timeout: 5s
       retries: 5
 
-  # 2. Senin Projen (ETL)
-  etl:
+  # 2. AIRFLOW METADATA DB
+  airflow-postgres:
+    image: postgres:13
+    container_name: airflow_meta_db
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
+
+  # 3. AIRFLOW WEBSERVER
+  airflow-webserver:
     build: .
-    container_name: ecommerce_etl_container
+    container_name: airflow_webserver
+    command: webserver
+    ports:
+      - "8080:8080"
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=true
+      - AIRFLOW__CORE__LOAD_EXAMPLES=false
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./etl:/opt/airflow/etl
+      - ./data:/opt/airflow/data
+      - ./config:/opt/airflow/config
+      - ./logs:/opt/airflow/logs
+      - ./sql:/opt/airflow/sql
     depends_on:
+      airflow-postgres:
+        condition: service_healthy
       postgres:
         condition: service_healthy
+
+  # 4. AIRFLOW SCHEDULER
+  airflow-scheduler:
+    build: .
+    container_name: airflow_scheduler
+    command: scheduler
     environment:
-      DB_HOST: postgres
-      DB_USER: postgres
-      DB_PASSWORD: mysecretpassword
-      DB_NAME: ecommerce_dwh
-      DB_PORT: 5432
-    # Bilgisayarındaki data klasörünü Docker'a bağla:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+      - AIRFLOW__CORE__LOAD_EXAMPLES=false
     volumes:
-      - ./data:/app/data
-    # Veritabanı hazır olunca çalıştır:
-    command: >
-      sh -c "python etl/setup_tables.py && python etl/main.py"
+      - ./dags:/opt/airflow/dags
+      - ./etl:/opt/airflow/etl
+      - ./data:/opt/airflow/data
+      - ./config:/opt/airflow/config
+      - ./logs:/opt/airflow/logs
+      - ./sql:/opt/airflow/sql
+    depends_on:
+      airflow-webserver:
+        condition: service_started
+
+  # 5. AIRFLOW INIT 
+  airflow-init:
+    build: .
+    container_name: airflow_init
+    environment:
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+    # TEK SATIR KOMUT (Garanti Çalışır):
+    command: bash -c "airflow db init && airflow users create --username admin --firstname Yuksel --lastname Uygun --role Admin --email admin@example.com --password admin"
+    depends_on:
+      airflow-postgres:
+        condition: service_healthy
 
 volumes:
   postgres_data:
+  airflow_postgres_data:
