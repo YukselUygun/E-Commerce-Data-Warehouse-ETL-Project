@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # 1. Veritabanı Servisi
+  postgres:
+    image: postgres:13
+    container_name: ecommerce_db_container
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: ecommerce_dwh
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Senin Projen (ETL)
+  etl:
+    build: .
+    container_name: ecommerce_etl_container
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_USER: postgres
+      DB_PASSWORD: mysecretpassword
+      DB_NAME: ecommerce_dwh
+      DB_PORT: 5432
+    # Bilgisayarındaki data klasörünü Docker'a bağla:
+    volumes:
+      - ./data:/app/data
+    # Veritabanı hazır olunca çalıştır:
+    command: >
+      sh -c "python etl/setup_tables.py && python etl/main.py"
+
+volumes:
+  postgres_data:
